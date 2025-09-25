@@ -1,0 +1,19 @@
+{
+  "name": "react_python_graphql_example",
+  "version": "1.0.0",
+  "description": "Full-stack application with React frontend and FastAPI backend",
+  "scripts": {
+    "dev": "concurrently \"cd api && uvicorn main:app --reload --port 9000\" \"cd frontend && npm run dev\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd api && uvicorn main:app --reload --port 9000",
+    "build": "cd frontend && npm run build",
+    "build:prod": "cd frontend && npm run build && cd ../api && uvicorn main:app --port 9000",
+    "install:all": "cd frontend && npm install && cd ../api && pip install -e ."
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["react", "fastapi", "graphql", "typescript"],
+  "author": "Your Name",
+  "license": "MIT"
+}

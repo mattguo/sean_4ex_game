@@ -1,0 +1,20 @@
+[project]
+name = "react_python_graphql_example"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Matt Guo",email = "matt@mattguo.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "strawberry-graphql[fastapi]",
+]
+
+
+[tool.poetry.group.dev.dependencies]
+uvicorn = "*"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
