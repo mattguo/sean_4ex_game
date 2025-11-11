@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import { RelayEnvironmentProvider } from 'react-relay';
 import { Environment, Network, type FetchFunction } from 'relay-runtime';
-import { MantineProvider, ActionIcon, Box } from '@mantine/core';
+import { MantineProvider, ActionIcon, Box, Anchor, Group } from '@mantine/core';
 import '@mantine/core/styles.css';
-import { IconMoon, IconSun } from '@tabler/icons-react';
+import { IconMoon, IconSun, IconExternalLink } from '@tabler/icons-react';
 
 const fetchGraphQL: FetchFunction = async (request, variables) => {
   const resp = await fetch('/graphql', {
@@ -42,12 +42,8 @@ export function AppWithThemeToggle() {
   return (
     <MantineProvider forceColorScheme={colorScheme}>
       <Box pos="relative" w="100%">
-        <ActionIcon
-          variant="transparent"
-          aria-label="Settings"
-          onClick={() =>
-            setColorScheme(prev => (prev === 'light' ? 'dark' : 'light'))
-          }
+        <Group
+          gap="xs"
           style={{
             position: 'fixed',
             top: '20px',
@@ -55,12 +51,34 @@ export function AppWithThemeToggle() {
             zIndex: 1000,
           }}
         >
-          {colorScheme === 'dark' ? (
-            <IconSun stroke={2} />
-          ) : (
-            <IconMoon stroke={2} />
-          )}
-        </ActionIcon>
+          <ActionIcon
+            variant="transparent"
+            aria-label="Toggle theme"
+            onClick={() =>
+              setColorScheme(prev => (prev === 'light' ? 'dark' : 'light'))
+            }
+          >
+            {colorScheme === 'dark' ? (
+              <IconSun stroke={2} />
+            ) : (
+              <IconMoon stroke={2} />
+            )}
+          </ActionIcon>
+          <Anchor
+            href="/graphql"
+            target="_blank"
+            rel="noopener noreferrer"
+            size="sm"
+            fw={500}
+            underline="never"
+            c="inherit"
+          >
+            <Group gap={4}>
+              GQL debug
+              <IconExternalLink size={16} />
+            </Group>
+          </Anchor>
+        </Group>
 
         <RelayEnvironmentProvider environment={environment}>
           <Suspense fallback="Loading...">

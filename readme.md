@@ -14,38 +14,79 @@ In this example, the frontend renders a Star War film list provided in [`api/mai
 
 [`api`](api/) is a python + FastAPI + Strawberry GraphQL server template
 
-
-## Syncing GraphQL schema
-
-```
-# to get the GQL schema
-strawberry export-schema main > ../frontend/src/graphql_schema/local_schema.graphql
-
-# then run this under frontend
-npm run relay
-```
-
 # How to hack this project
+
+## Prerequisites
+
+### Install Package Managers
+
+1. **Backend (uv)**:
+   ```bash
+   # Windows
+   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+   
+   # macOS/Linux
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   
+   # or via pip
+   pip install uv
+   ```
+
+2. **Frontend (pnpm)**:
+   ```bash
+   # Windows
+   powershell -c "irm https://get.pnpm.io/install.ps1 | iex"
+   
+   # macOS/Linux
+   curl -fsSL https://get.pnpm.io/install.sh | sh -
+   
+   # or via npm
+   npm install -g pnpm
+   ```
+
+### Install Dependencies
+
+1. **Backend Dependencies**:
+   ```bash
+   cd api
+   uv sync
+   ```
+
+2. **Frontend Dependencies** (includes Relay and all dev dependencies):
+   ```bash
+   cd frontend
+   pnpm install
+   ```
 
 ## Develop Environment
 
+### Syncing GraphQL schema
+
+```bash
+# to get the GQL schema (run under api/)
+cd api
+uv sync  # First time only: install dependencies
+uv run strawberry export-schema main > ../frontend/src/graphql_schema/local_schema.graphql
+
+# then run this under frontend to generate Relay artifacts
+cd ../frontend
+pnpm relay
+```
+
 ### Starting Development Environment
 
-**Method 1: Start Separately (Recommended)**
-
-1. Start Backend API:
+1. **Start Backend API**:
    ```bash
-   pip install poetry
-
    cd api
-   poetry run uvicorn main:app --reload --port 9000
+   uv run uvicorn main:app --reload --port 9000
    ```
 
-2. Start Frontend Dev Server:
+2. **Start Frontend Dev Server**:
    ```bash
    cd frontend
-   npm run dev
+   pnpm dev
    ```
+
 ### Access URLs
 
 - **Frontend Dev Server**: http://localhost:5173
@@ -72,14 +113,14 @@ The production environment uses a single port (9000) to serve both frontend and 
 1. **Build Frontend**:
    ```bash
    cd frontend
-   npm run build
+   pnpm build
    ```
    This generates production files in `frontend/dist/` directory.
 
 2. **Start Production Server**:
    ```bash
    cd api
-   poetry run uvicorn main:app --host 0.0.0.0 --port 9000
+   uv run uvicorn main:app --host 0.0.0.0 --port 9000
    ```
 
 ### Access URLs
