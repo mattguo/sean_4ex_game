@@ -10,4 +10,5 @@ dependencies = [
     "strawberry-graphql[fastapi,cli]>=0.219.0",
     "uvicorn>=0.27.0",
     "fastapi>=0.109.0",
+    "sqlalchemy>=2.0.0",
 ]

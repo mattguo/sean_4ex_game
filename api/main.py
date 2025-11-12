@@ -8,6 +8,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from strawberry.fastapi import GraphQLRouter
 
+from mutations import MyAPIMutation
+from init_db import init_database
+
 """
 Example query:
 {
@@ -56,11 +59,17 @@ class MyAPIQuery:
 
 
 
-schema = strawberry.Schema(MyAPIQuery)
+schema = strawberry.Schema(query=MyAPIQuery, mutation=MyAPIMutation)
 
 graphql_app = GraphQLRouter(schema)
 
 app = FastAPI()
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database tables on application startup."""
+    init_database()
 
 # Add CORS middleware
 app.add_middleware(

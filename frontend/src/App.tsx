@@ -1,13 +1,8 @@
 import './App.css';
-import FilmList from './FilmList';
-import { Stack } from '@mantine/core';
+import GameHall from './GameHall';
 
 function App() {
-  return (
-    <Stack gap="xl">
-      <FilmList />
-    </Stack>
-  );
+  return <GameHall />;
 }
 
 export default App;
