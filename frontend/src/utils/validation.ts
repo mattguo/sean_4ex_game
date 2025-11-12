@@ -1,44 +1,39 @@
 /**
- * Validation utilities for form inputs.
+ * Validation utilities for form inputs
  * 
- * These validators match the backend validation rules to provide
- * immediate client-side feedback.
+ * These validation rules match the backend validation to provide
+ * immediate feedback to users.
  */
-
-const NICKNAME_MIN_LENGTH = 3;
-const NICKNAME_MAX_LENGTH = 20;
-const NICKNAME_PATTERN = /^[a-zA-Z0-9_]+$/;
 
 /**
- * Validate a player nickname.
+ * Validate a nickname according to game rules
  * 
  * Rules:
- * - Must not be empty
  * - Must be between 3 and 20 characters
- * - Must contain only letters, numbers, and underscores
+ * - Can only contain letters, numbers, and underscores
  * 
  * @param nickname - The nickname to validate
- * @returns Error message if invalid, null if valid
+ * @returns null if valid, error message string if invalid
  */
 export function validateNickname(nickname: string): string | null {
-  if (!nickname || nickname.trim() === '') {
+  if (!nickname || nickname.trim().length === 0) {
     return 'Nickname is required';
   }
-
+  
   const trimmed = nickname.trim();
-
-  if (trimmed.length < NICKNAME_MIN_LENGTH) {
-    return `Nickname must be at least ${NICKNAME_MIN_LENGTH} characters`;
+  
+  if (trimmed.length < 3) {
+    return 'Nickname must be at least 3 characters';
   }
-
-  if (trimmed.length > NICKNAME_MAX_LENGTH) {
-    return `Nickname must be no more than ${NICKNAME_MAX_LENGTH} characters`;
+  
+  if (trimmed.length > 20) {
+    return 'Nickname must be no more than 20 characters';
   }
-
-  if (!NICKNAME_PATTERN.test(trimmed)) {
+  
+  // Only allow alphanumeric and underscore
+  if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) {
     return 'Only letters, numbers, and underscores allowed';
   }
-
+  
   return null;
 }
-

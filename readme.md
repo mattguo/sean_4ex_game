@@ -66,10 +66,16 @@ In this example, the frontend renders a Star War film list provided in [`api/mai
 # to get the GQL schema (run under api/)
 cd api
 uv sync  # First time only: install dependencies
-uv run strawberry export-schema main > ../frontend/src/graphql_schema/local_schema.graphql
+
+# Export schema:
+# On Windows PowerShell:
+uv run strawberry export-schema main > ..\frontend\src\graphql_schema\local_schema.graphql
+
+# On macOS/Linux/Git Bash:
+# uv run strawberry export-schema main > ../frontend/src/graphql_schema/local_schema.graphql
 
 # then run this under frontend to generate Relay artifacts
-cd ../frontend
+cd ../frontend  # or cd ..\frontend on Windows
 pnpm relay
 ```
 

@@ -7,7 +7,7 @@ database models and are used in queries and mutations.
 
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 import strawberry
 
@@ -44,7 +44,7 @@ class PlayerType:
             PlayerType instance
         """
         return cls(
-            id=strawberry.ID(str(player.id)),
+            id=strawberry.ID(f"Player:{player.id}"),
             nickname=player.nickname,
             is_creator=player.is_creator,
             joined_at=player.joined_at,
@@ -64,6 +64,7 @@ class RoomType:
     status: RoomStatus
     created_at: datetime
     creator: PlayerType
+    players: List[PlayerType]
     
     @classmethod
     def from_db_model(cls, room):
@@ -77,12 +78,13 @@ class RoomType:
             RoomType instance
         """
         return cls(
-            id=strawberry.ID(str(room.id)),
+            id=strawberry.ID(f"Room:{room.id}"),
             code=room.code,
             game_type=room.game_type,
             status=RoomStatus(room.status),
             created_at=room.created_at,
             creator=PlayerType.from_db_model(room.creator),
+            players=[PlayerType.from_db_model(p) for p in room.players],
         )
 
 
@@ -95,4 +97,29 @@ class CreateRoomResult:
     """
     room: RoomType
     player: PlayerType
+
+
+@strawberry.type
+class JoinRoomResult:
+    """
+    Result type for the joinRoom mutation.
+    
+    Contains success status, optional error message, and the room/player data on success.
+    """
+    success: bool
+    error: Optional[str] = None
+    room: Optional[RoomType] = None
+    player: Optional[PlayerType] = None
+
+
+@strawberry.type
+class StartGameResult:
+    """
+    Result type for the startGame mutation.
+    
+    Contains success status, optional error message, and the room data on success.
+    """
+    success: bool
+    error: Optional[str] = None
+    room: Optional[RoomType] = None
 

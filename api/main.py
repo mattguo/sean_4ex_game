@@ -1,6 +1,7 @@
 import strawberry
 import os
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,10 @@ from strawberry.fastapi import GraphQLRouter
 
 from mutations import MyAPIMutation
 from init_db import init_database
+from graphql_types import RoomType
+from models import Room
+from database import get_db
+from sqlalchemy.orm import joinedload
 
 """
 Example query:
@@ -56,6 +61,28 @@ class MyAPIQuery:
     @strawberry.field
     def ping(self, message: str) -> str:
         return f"Ack: {message}"
+    
+    @strawberry.field
+    def room_by_code(self, code: str) -> Optional[RoomType]:
+        """
+        Query a room by its code.
+        
+        Args:
+            code: The 6-character room code
+            
+        Returns:
+            RoomType if found, None otherwise
+        """
+        with get_db() as session:
+            # Eager load relationships to avoid lazy loading issues
+            room = session.query(Room).options(
+                joinedload(Room.creator),
+                joinedload(Room.players)
+            ).filter_by(code=code).first()
+            
+            if room:
+                return RoomType.from_db_model(room)
+            return None
 
 
 
@@ -71,10 +98,18 @@ async def startup_event():
     """Initialize database tables on application startup."""
     init_database()
 
+# Configure allowed origins from environment variable
+# Default includes mattguo.com and all subdomains
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "https://mattguo.com,https://*.mattguo.com"
+).split(",")
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://localhost:\d+",  # Allow any localhost port
+    allow_origins=ALLOWED_ORIGINS,  # Production domains
+    allow_origin_regex=r"https?://(localhost|192\.168\.\d+\.\d+):\d+",  # Local development
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all request headers

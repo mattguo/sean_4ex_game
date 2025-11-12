@@ -21,13 +21,23 @@ type FilmList {
   films: [Film!]!
 }
 
+type JoinRoomResult {
+  success: Boolean!
+  error: String
+  room: RoomType
+  player: PlayerType
+}
+
 type MyAPIMutation {
   createRoom(nickname: String!): CreateRoomResult!
+  joinRoom(code: String!, nickname: String!): JoinRoomResult!
+  startGame(code: String!): StartGameResult!
 }
 
 type MyAPIQuery {
   allFilms: FilmList!
   ping(message: String!): String!
+  roomByCode(code: String!): RoomType
 }
 
 type PlayerType {
@@ -50,4 +60,11 @@ type RoomType {
   status: RoomStatus!
   createdAt: DateTime!
   creator: PlayerType!
+  players: [PlayerType!]!
+}
+
+type StartGameResult {
+  success: Boolean!
+  error: String
+  room: RoomType
 }
