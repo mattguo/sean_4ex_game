@@ -5,11 +5,13 @@
  * Only this component re-renders during polling.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLazyLoadQuery, graphql } from 'react-relay';
-import { Stack, Text, List, Badge, Group, Loader } from '@mantine/core';
-import type { JoinedLobbyPlayersQuery } from './__generated__/JoinedLobbyPlayersQuery.graphql';
+import { graphql, useRelayEnvironment } from 'react-relay';
+import { fetchQuery } from 'relay-runtime';
+import { isEqual } from 'lodash';
+import { Stack, Text, List, Badge, Group } from '@mantine/core';
+import type { JoinedLobbyPlayersQuery, JoinedLobbyPlayersQuery$data } from './__generated__/JoinedLobbyPlayersQuery.graphql';
 
 const ROOM_QUERY = graphql`
   query JoinedLobbyPlayersQuery($code: String!) {
@@ -39,31 +41,49 @@ export default function JoinedLobbyPlayers({
   pollInterval = 3000 
 }: JoinedLobbyPlayersProps) {
   const navigate = useNavigate();
-  const [pollKey, setPollKey] = useState(0);
+  const environment = useRelayEnvironment();
+  const [roomData, setRoomData] = useState<JoinedLobbyPlayersQuery$data | null>(null);
+  const previousDataRef = useRef<JoinedLobbyPlayersQuery$data | null>(null);
   
-  const data = useLazyLoadQuery<JoinedLobbyPlayersQuery>(
-    ROOM_QUERY,
-    { code },
-    { fetchPolicy: 'network-only', fetchKey: pollKey }
-  );
-  
-  // Poll for updates
+  // Poll at specified interval and fetch data
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPollKey(prev => prev + 1);
-    }, pollInterval);
+    const fetchRoomData = async () => {
+      try {
+        const response = await fetchQuery<JoinedLobbyPlayersQuery>(
+          environment,
+          ROOM_QUERY,
+          { code }
+        ).toPromise();
+        
+        if (response) {
+          // Only update state if data actually changed
+          if (!isEqual(response, previousDataRef.current)) {
+            previousDataRef.current = response;
+            setRoomData(response);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch room data:', error);
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchRoomData();
+    
+    // Then poll at specified interval
+    const interval = setInterval(fetchRoomData, pollInterval);
     
     return () => clearInterval(interval);
-  }, [code, pollInterval]);
+  }, [environment, code, pollInterval]);
   
   // Check if game started - navigate to game page
   useEffect(() => {
-    if (data.roomByCode?.status === 'ACTIVE') {
+    if (roomData?.roomByCode?.status === 'ACTIVE') {
       navigate(`/game/${code}`);
     }
-  }, [data.roomByCode?.status, code, navigate]);
+  }, [roomData?.roomByCode?.status, code, navigate]);
   
-  if (!data.roomByCode) {
+  if (!roomData?.roomByCode) {
     return (
       <Text c="red" ta="center">
         Room no longer exists
@@ -71,7 +91,7 @@ export default function JoinedLobbyPlayers({
     );
   }
   
-  const room = data.roomByCode;
+  const room = roomData.roomByCode;
   const playerCount = room.players.length;
   
   return (
@@ -104,10 +124,6 @@ export default function JoinedLobbyPlayers({
       <Text c="dimmed" ta="center">
         Waiting for host to start the game...
       </Text>
-      
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Loader size="sm" />
-      </div>
     </Stack>
   );
 }

@@ -5,9 +5,11 @@
  * and start game button, keeping other UI elements stable.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useLazyLoadQuery, graphql } from 'react-relay';
+import { useMutation, graphql, useRelayEnvironment } from 'react-relay';
+import { fetchQuery } from 'relay-runtime';
+import { isEqual } from 'lodash';
 import {
   Stack,
   Text,
@@ -22,7 +24,7 @@ import {
   IconPlayerPlay,
   IconAlertCircle,
 } from '@tabler/icons-react';
-import type { LobbyPlayersQuery } from './__generated__/LobbyPlayersQuery.graphql';
+import type { LobbyPlayersQuery, LobbyPlayersQuery$data } from './__generated__/LobbyPlayersQuery.graphql';
 import type { LobbyPlayersStartGameMutation } from './__generated__/LobbyPlayersStartGameMutation.graphql';
 
 const ROOM_QUERY = graphql`
@@ -67,28 +69,45 @@ export default function LobbyPlayers({
   pollInterval = 3000 
 }: LobbyPlayersProps) {
   const navigate = useNavigate();
-  const [pollKey, setPollKey] = useState(0);
+  const environment = useRelayEnvironment();
+  const [roomData, setRoomData] = useState<LobbyPlayersQuery$data | null>(null);
+  const previousDataRef = useRef<LobbyPlayersQuery$data | null>(null);
   
   const [commitStartGame, isStartingGame] = 
     useMutation<LobbyPlayersStartGameMutation>(START_GAME_MUTATION);
 
-  // Query room state for polling
-  const data = useLazyLoadQuery<LobbyPlayersQuery>(
-    ROOM_QUERY,
-    { code: roomCode },
-    { fetchPolicy: 'network-only', fetchKey: pollKey }
-  );
-  
-  // Poll at specified interval
+  // Poll at specified interval and fetch data
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPollKey(prev => prev + 1);
-    }, pollInterval);
+    const fetchRoomData = async () => {
+      try {
+        const response = await fetchQuery<LobbyPlayersQuery>(
+          environment,
+          ROOM_QUERY,
+          { code: roomCode }
+        ).toPromise();
+        
+        if (response) {
+          // Only update state if data actually changed
+          if (!isEqual(response, previousDataRef.current)) {
+            previousDataRef.current = response;
+            setRoomData(response);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch room data:', error);
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchRoomData();
+    
+    // Then poll at specified interval
+    const interval = setInterval(fetchRoomData, pollInterval);
     
     return () => clearInterval(interval);
-  }, [roomCode, pollInterval]);
+  }, [environment, roomCode, pollInterval]);
   
-  const room = data.roomByCode;
+  const room = roomData?.roomByCode;
   
   if (!room) {
     return (
@@ -124,11 +143,6 @@ export default function LobbyPlayers({
             <List.Item key={p.id}>
               <Group gap="xs">
                 <Text size="sm">{p.nickname}</Text>
-                {p.isCreator && (
-                  <Badge color="yellow" size="sm">
-                    Host
-                  </Badge>
-                )}
                 {p.id === playerId && (
                   <Badge color="green" size="sm">
                     You

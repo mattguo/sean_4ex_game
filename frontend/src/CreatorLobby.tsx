@@ -98,7 +98,7 @@ export default function CreatorLobby({
           <LobbyPlayers 
             roomCode={roomCode} 
             playerId={playerId}
-            pollInterval={3000}
+            pollInterval={2000}
           />
         </Suspense>
 

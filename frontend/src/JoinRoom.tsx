@@ -9,9 +9,10 @@
  * 5. Handle various error states
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useMutation, graphql } from 'react-relay';
+import { useMutation, graphql, useRelayEnvironment } from 'react-relay';
+import { fetchQuery } from 'relay-runtime';
 import { 
   Container, 
   Title, 
@@ -25,6 +26,23 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import { validateNickname } from './utils/validation';
 import JoinedLobby from './JoinedLobby';
 import type { JoinRoomMutation as JoinRoomMutationType } from './__generated__/JoinRoomMutation.graphql';
+import type { JoinRoomCheckQuery } from './__generated__/JoinRoomCheckQuery.graphql';
+
+const ROOM_CHECK_QUERY = graphql`
+  query JoinRoomCheckQuery($code: String!) {
+    roomByCode(code: $code) {
+      id
+      code
+      status
+      players {
+        id
+        nickname
+        isCreator
+        joinedAt
+      }
+    }
+  }
+`;
 
 const JoinRoomMutationGraphQL = graphql`
   mutation JoinRoomMutation($code: String!, $nickname: String!) {
@@ -61,15 +79,70 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export default function JoinRoom() {
   const { code } = useParams<{ code: string }>();
+  const environment = useRelayEnvironment();
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
+  const [roomCheckLoading, setRoomCheckLoading] = useState(true);
+  const [roomCheckError, setRoomCheckError] = useState<string | null>(null);
   
   const [commitMutation, isMutationInFlight] = useMutation<JoinRoomMutationType>(
     JoinRoomMutationGraphQL
   );
+
+  // Check room status immediately on mount
+  useEffect(() => {
+    if (!code) {
+      setRoomCheckLoading(false);
+      return;
+    }
+
+    const checkRoomStatus = async () => {
+      try {
+        setRoomCheckLoading(true);
+        const response = await fetchQuery<JoinRoomCheckQuery>(
+          environment,
+          ROOM_CHECK_QUERY,
+          { code }
+        ).toPromise();
+
+        if (!response?.roomByCode) {
+          setRoomCheckError('ROOM_NOT_FOUND');
+          setRoomCheckLoading(false);
+          return;
+        }
+
+        const room = response.roomByCode;
+        const playerCount = room.players.length;
+
+        // Check if room is already started
+        if (room.status === 'ACTIVE') {
+          setRoomCheckError('ROOM_ALREADY_STARTED');
+          setRoomCheckLoading(false);
+          return;
+        }
+
+        // Check if room is full
+        if (playerCount >= 4) {
+          setRoomCheckError('ROOM_FULL');
+          setRoomCheckLoading(false);
+          return;
+        }
+
+        // Room is valid and can be joined
+        setRoomCheckError(null);
+        setRoomCheckLoading(false);
+      } catch (err) {
+        console.error('Failed to check room status:', err);
+        setRoomCheckError('ROOM_NOT_FOUND');
+        setRoomCheckLoading(false);
+      }
+    };
+
+    checkRoomStatus();
+  }, [code, environment]);
   
   const handleNicknameChange = (value: string) => {
     setNickname(value);
@@ -127,13 +200,54 @@ export default function JoinRoom() {
       </Container>
     );
   }
+
+  // Show loading state while checking room status
+  if (roomCheckLoading) {
+    return (
+      <Container size="sm" py="xl">
+        <Stack gap="lg" align="center">
+          <Title order={1}>Checking Room...</Title>
+          <Text c="dimmed">Verifying room status...</Text>
+        </Stack>
+      </Container>
+    );
+  }
+
+  // Show error if room is invalid, full, or already started
+  if (roomCheckError) {
+    const errorMessage = ERROR_MESSAGES[roomCheckError] || 'Unable to join this room.';
+    return (
+      <Container size="sm" py="xl">
+        <Stack gap="lg">
+          <div>
+            <Title order={1}>Cannot Join Room</Title>
+            <Text c="dimmed" mt="sm">
+              Room Code: <strong>{code}</strong>
+            </Text>
+          </div>
+          
+          <Alert 
+            icon={<IconAlertCircle size={16} />} 
+            title="Error" 
+            color="red"
+          >
+            {errorMessage}
+          </Alert>
+          
+          <Button component={Link} to="/" fullWidth>
+            Back to Home
+          </Button>
+        </Stack>
+      </Container>
+    );
+  }
   
   // Show joined lobby after successful join
   if (joined && playerId) {
     return <JoinedLobby code={code} playerId={playerId} />;
   }
   
-  // Show join form
+  // Show join form (only if room is valid and can be joined)
   return (
     <Container size="sm" py="xl">
       <Stack gap="lg">
