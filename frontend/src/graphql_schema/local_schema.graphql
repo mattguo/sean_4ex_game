@@ -11,16 +11,6 @@ type CreateRoomResult {
 """Date with time (isoformat)"""
 scalar DateTime
 
-type Film {
-  id: String!
-  title: String!
-  director: String!
-}
-
-type FilmList {
-  films: [Film!]!
-}
-
 type JoinRoomResult {
   success: Boolean!
   error: String
@@ -35,7 +25,6 @@ type MyAPIMutation {
 }
 
 type MyAPIQuery {
-  allFilms: FilmList!
   ping(message: String!): String!
   roomByCode(code: String!): RoomType
 }

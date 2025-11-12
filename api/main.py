@@ -16,48 +16,8 @@ from models import Room
 from database import get_db
 from sqlalchemy.orm import joinedload
 
-"""
-Example query:
-{
-  ping(message: "Ciao")
-  allFilms {
-    films {
-      id
-      title
-      director
-    }
-  },
-}
-"""
-
-@strawberry.type
-class Film:
-    id: str
-    title: str
-    director: str
-
-@strawberry.type
-class FilmList:
-    films: list[Film]
-
 @strawberry.type
 class MyAPIQuery:
-    @strawberry.field
-    def allFilms(self) -> FilmList:
-        return FilmList(films=[
-            Film(id="1", title="The Empire Strikes Back", director="Irvin Kershner"),
-            Film(id="2", title="A New Hope", director="George Lucas"),
-            Film(id="3", title="Return of the Jedi", director="Richard Marquand"),
-            Film(id="4", title="The Phantom Menace", director="George Lucas"),
-            Film(id="5", title="Attack of the Clones", director="George Lucas"),
-            Film(id="6", title="Revenge of the Sith", director="George Lucas"),
-            Film(id="7", title="The Force Awakens", director="J.J. Abrams"),
-            Film(id="8", title="The Last Jedi", director="Rian Johnson"),
-            Film(id="9", title="The Rise of Skywalker", director="J.J. Abrams"),
-            Film(id="10", title="Rogue One", director="Gareth Edwards"),
-            Film(id="11", title="Solo", director="Ron Howard")
-        ])
-
     @strawberry.field
     def ping(self, message: str) -> str:
         return f"Ack: {message}"
